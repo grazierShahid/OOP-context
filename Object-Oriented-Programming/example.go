@@ -1,383 +1,189 @@
-// Complete Object-Oriented Programming Examples in Go
-// Covering: Structs, Methods, Interfaces, Embedding, Composition, Polymorphism
+// Complete OOP Demo - Go
+// Flow: Struct -> Access Control -> Constructor -> Embedding -> Composition -> Polymorphism -> Interface -> Encapsulation
 
 package main
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // ============================================================================
-// 1. ENCAPSULATION - Data hiding using package visibility
+// 1. STRUCT (like class) with ACCESS CONTROL & CONSTRUCTOR
 // ============================================================================
 
-// Shared variable (like static in Java)
-var totalAccounts int
+// Static-like variable (package level)
+var totalEmployees int
 
-type BankAccount struct {
-	accountNumber string  // unexported (private)
-	balance       float64 // unexported (private)
-	OwnerName     string  // exported (public)
+type Employee struct {
+	name       string  // unexported (private) - lowercase
+	salary     float64 // unexported (private)
+	Department string  // exported (public) - uppercase
 }
 
-// Constructor function (Go doesn't have constructors)
-func NewBankAccount(accountNumber, ownerName string, initialBalance float64) *BankAccount {
-	if initialBalance < 0 {
-		initialBalance = 0
-	}
-	totalAccounts++
-	return &BankAccount{
-		accountNumber: accountNumber,
-		balance:       initialBalance,
-		OwnerName:     ownerName,
-	}
+// NewEmployee is a constructor-like function that creates a new Employee struct.
+func NewEmployee(name string, salary float64, department string) *Employee {
+	totalEmployees++ // like static increment
+	fmt.Printf("Employee created: %s\n", name)
+	return &Employee{name: name, salary: salary, Department: department}
 }
 
-// Getter methods (controlled access to private fields)
-func (b *BankAccount) GetAccountNumber() string { return b.accountNumber }
-func (b *BankAccount) GetBalance() float64      { return b.balance }
-func GetTotalAccounts() int                     { return totalAccounts }
+// Getter for private field (encapsulation)
+func (e *Employee) GetName() string { return e.name }
+func GetTotalEmployees() int        { return totalEmployees }
 
-// Behavior methods with validation
-func (b *BankAccount) Deposit(amount float64) bool {
-	if amount > 0 {
-		b.balance += amount
-		return true
-	}
-	return false
-}
-
-func (b *BankAccount) Withdraw(amount float64) bool {
-	if amount > 0 && amount <= b.balance {
-		b.balance -= amount
-		return true
-	}
-	return false
-}
-
-func (b *BankAccount) DisplayInfo() {
-	fmt.Printf("Account: %s, Owner: %s, Balance: $%.2f\n",
-		b.accountNumber, b.OwnerName, b.balance)
+// Method for Employee
+func (e *Employee) Work() {
+	fmt.Printf("%s is working\n", e.name)
 }
 
 // ============================================================================
-// 2. ABSTRACTION - Interfaces (contracts)
+// 2. INHERITANCE via EMBEDDING - Single, Multilevel, Hierarchical
 // ============================================================================
 
-// Interface for vehicle operations (abstraction)
-type Vehicular interface {
-	Start()
-	Stop()
-	DisplayBasicInfo()
-	CalculateFuelEfficiency() float64
+// Single inheritance: Manager embeds Employee
+type Manager struct {
+	*Employee // embedded pointer (inheritance)
+	teamName  string
 }
 
-// Interface for driving behavior
-type Drivable interface {
-	Accelerate()
-	Brake()
-	Turn(direction string)
-}
-
-// Interface for maintenance
-type Maintainable interface {
-	PerformMaintenance()
-	NeedsMaintenance() bool
-}
-
-// ============================================================================
-// 3. BASE STRUCT (like abstract class) & INHERITANCE via EMBEDDING
-// ============================================================================
-
-// Base Vehicle struct (like abstract class in Java)
-type Vehicle struct {
-	Brand string
-	Model string
-	Year  int
-}
-
-// Methods for base Vehicle
-func (v *Vehicle) DisplayBasicInfo() {
-	fmt.Printf("%d %s %s\n", v.Year, v.Brand, v.Model)
-}
-
-// Constructor for Vehicle
-func NewVehicle(brand, model string, year int) Vehicle {
-	return Vehicle{Brand: brand, Model: model, Year: year}
-}
-
-// ============================================================================
-// 4. INHERITANCE via EMBEDDING - Car "inherits" from Vehicle
-// ============================================================================
-
-type Car struct {
-	Vehicle  // embedded struct (inheritance)
-	doors    int
-	fuelType string
-	mileage  float64
-}
-
-// Constructor for Car
-func NewCar(brand, model string, year, doors int, fuelType string) *Car {
-	return &Car{
-		Vehicle:  NewVehicle(brand, model, year),
-		doors:    doors,
-		fuelType: fuelType,
-		mileage:  0,
+func NewManager(name string, salary float64, department, teamName string) *Manager {
+	return &Manager{
+		Employee: NewEmployee(name, salary, department),
+		teamName: teamName,
 	}
 }
 
-// Implementing Vehicular interface
-func (c *Car) Start() {
-	fmt.Println("Car engine started with key ignition")
+// Method overriding (Runtime polymorphism)
+func (m *Manager) Work() {
+	fmt.Printf("%s is managing team: %s\n", m.GetName(), m.teamName)
 }
 
-func (c *Car) Stop() {
-	fmt.Println("Car engine stopped")
+// Hierarchical inheritance: Developer also embeds Employee
+type Developer struct {
+	*Employee
+	programmingLanguage string
 }
 
-func (c *Car) CalculateFuelEfficiency() float64 {
-	if c.mileage > 0 {
-		return c.mileage / 100 // km per liter
+func NewDeveloper(name string, salary float64, department, language string) *Developer {
+	return &Developer{
+		Employee:            NewEmployee(name, salary, department),
+		programmingLanguage: language,
 	}
-	return 0
 }
 
-// Implementing Drivable interface
-func (c *Car) Accelerate() {
-	fmt.Println("Car is accelerating smoothly")
+func (d *Developer) Work() {
+	fmt.Printf("%s is coding in %s\n", d.GetName(), d.programmingLanguage)
 }
 
-func (c *Car) Brake() {
-	fmt.Println("Car brakes applied")
+// Multilevel inheritance: SeniorDeveloper embeds Developer
+type SeniorDeveloper struct {
+	*Developer
+	yearsExperience int
 }
 
-func (c *Car) Turn(direction string) {
-	fmt.Printf("Car turning %s\n", direction)
+func NewSeniorDeveloper(name string, salary float64, department, language string, years int) *SeniorDeveloper {
+	return &SeniorDeveloper{
+		Developer:       NewDeveloper(name, salary, department, language),
+		yearsExperience: years,
+	}
 }
 
-// Implementing Maintainable interface
-func (c *Car) PerformMaintenance() {
-	fmt.Println("Performing car maintenance: oil change, tire check")
-}
-
-func (c *Car) NeedsMaintenance() bool {
-	return c.mileage > 10000 // needs maintenance after 10000 km
-}
-
-func (c *Car) AddMileage(miles float64) {
-	c.mileage += miles
+func (sd *SeniorDeveloper) Work() {
+	fmt.Printf("%s is leading development with %d years exp\n", sd.GetName(), sd.yearsExperience)
 }
 
 // ============================================================================
-// 5. HIERARCHICAL INHERITANCE - Another struct inheriting from Vehicle
+// 3. COMPOSITION - Has-A relationship
 // ============================================================================
 
-type Motorcycle struct {
-	Vehicle  // embedded struct (inheritance)
-	engineCC int
+type Computer struct {
+	model string
 }
 
-func NewMotorcycle(brand, model string, year, engineCC int) *Motorcycle {
-	return &Motorcycle{
-		Vehicle:  NewVehicle(brand, model, year),
-		engineCC: engineCC,
+func NewComputer(model string) *Computer {
+	return &Computer{model: model}
+}
+
+func (c *Computer) Start() {
+	fmt.Printf("%s computer started\n", c.model)
+}
+
+type Office struct {
+	location string
+}
+
+func NewOffice(location string) *Office {
+	return &Office{location: location}
+}
+
+func (o *Office) OpenOffice() {
+	fmt.Printf("%s office opened\n", o.location)
+}
+
+type WorkStation struct {
+	*Employee           // inheritance
+	computer  *Computer // HAS-A relationship
+	office    *Office   // HAS-A relationship
+}
+
+func NewWorkStation(name string, salary float64, department string, computer *Computer, office *Office) *WorkStation {
+	return &WorkStation{
+		Employee: NewEmployee(name, salary, department),
+		computer: computer,
+		office:   office,
 	}
 }
 
-// Implementing Vehicular interface
-func (m *Motorcycle) Start() {
-	fmt.Println("Motorcycle started with kick/electric start")
-}
-
-func (m *Motorcycle) Stop() {
-	fmt.Println("Motorcycle engine stopped")
-}
-
-func (m *Motorcycle) CalculateFuelEfficiency() float64 {
-	if m.engineCC < 200 {
-		return 40 // km/l for smaller engines
-	}
-	return 25 // km/l for larger engines
-}
-
-// Implementing Drivable interface
-func (m *Motorcycle) Accelerate() {
-	fmt.Println("Motorcycle accelerating quickly")
-}
-
-func (m *Motorcycle) Brake() {
-	fmt.Println("Motorcycle brakes applied")
-}
-
-func (m *Motorcycle) Turn(direction string) {
-	fmt.Printf("Motorcycle leaning %s to turn\n", direction)
-}
-
-// ============================================================================
-// 6. MULTILEVEL INHERITANCE - SportsCar "inherits" from Car
-// ============================================================================
-
-type SportsCar struct {
-	*Car         // embedded pointer (inheritance from Car)
-	horsepower   int
-	turbocharged bool
-}
-
-func NewSportsCar(brand, model string, year, doors, horsepower int, turbocharged bool) *SportsCar {
-	return &SportsCar{
-		Car:          NewCar(brand, model, year, doors, "Petrol"),
-		horsepower:   horsepower,
-		turbocharged: turbocharged,
-	}
-}
-
-// Method overriding (polymorphism)
-func (sc *SportsCar) Start() {
-	fmt.Println("Sports car engine roars to life!")
-}
-
-func (sc *SportsCar) Accelerate() {
-	fmt.Printf("Sports car accelerating with %d HP!\n", sc.horsepower)
-}
-
-// Override fuel efficiency calculation
-func (sc *SportsCar) CalculateFuelEfficiency() float64 {
-	if sc.turbocharged {
-		return 8 // less efficient
-	}
-	return 12
-}
-
-// Additional method specific to sports car
-func (sc *SportsCar) ActivateSportMode() {
-	fmt.Println("Sport mode activated! Maximum performance!")
+func (ws *WorkStation) Work() {
+	ws.office.OpenOffice()
+	ws.computer.Start()
+	fmt.Printf("%s started working at workstation\n", ws.GetName())
 }
 
 // ============================================================================
-// 7. COMPOSITION - Has-A Relationship
+// 4. DIAMOND PROBLEM SIMULATION & SOLUTION
 // ============================================================================
 
-type Engine struct {
-	Type       string
-	Horsepower int
-	isRunning  bool
+// Interface A
+type Workable interface {
+	DoWork()
 }
 
-func NewEngine(engineType string, horsepower int) *Engine {
-	return &Engine{
-		Type:       engineType,
-		Horsepower: horsepower,
-		isRunning:  false,
-	}
+// Interface B
+type Manageable interface {
+	DoWork()
 }
 
-func (e *Engine) Start() {
-	e.isRunning = true
-	fmt.Printf("%s engine started (%d HP)\n", e.Type, e.Horsepower)
+// Struct implementing both interfaces (potential diamond problem)
+type TeamLead struct {
+	*Employee
 }
 
-func (e *Engine) Stop() {
-	e.isRunning = false
-	fmt.Printf("%s engine stopped\n", e.Type)
+func NewTeamLead(name string, salary float64, department string) *TeamLead {
+	return &TeamLead{Employee: NewEmployee(name, salary, department)}
 }
 
-func (e *Engine) IsRunning() bool { return e.isRunning }
-
-type GPS struct {
-	currentLocation string
+// SOLUTION: Single method implementation satisfies both interfaces
+func (tl *TeamLead) DoWork() {
+	fmt.Printf("TeamLead %s: doing both work and management\n", tl.GetName())
 }
 
-func NewGPS() *GPS {
-	return &GPS{currentLocation: "Unknown"}
-}
-
-func (g *GPS) UpdateLocation(location string) {
-	g.currentLocation = location
-	fmt.Printf("GPS updated: Current location - %s\n", location)
-}
-
-func (g *GPS) GetCurrentLocation() string { return g.currentLocation }
-
-func (g *GPS) Navigate(destination string) {
-	fmt.Printf("GPS navigating from %s to %s\n", g.currentLocation, destination)
-}
-
-// Advanced car with composition
-type AdvancedCar struct {
-	Vehicle          // embedded (inheritance)
-	engine   *Engine // HAS-A relationship
-	gps      *GPS    // HAS-A relationship
-	features []string
-}
-
-func NewAdvancedCar(brand, model string, year int, engine *Engine) *AdvancedCar {
-	return &AdvancedCar{
-		Vehicle:  NewVehicle(brand, model, year),
-		engine:   engine,
-		gps:      NewGPS(),
-		features: []string{"Air Conditioning", "Power Steering", "ABS"},
-	}
-}
-
-// Implementing Vehicular interface
-func (ac *AdvancedCar) Start() {
-	ac.engine.Start()
-	ac.gps.UpdateLocation("Starting point")
-	fmt.Println("Advanced car is ready to drive")
-}
-
-func (ac *AdvancedCar) Stop() {
-	ac.engine.Stop()
-	fmt.Println("Advanced car stopped")
-}
-
-func (ac *AdvancedCar) CalculateFuelEfficiency() float64 {
-	return 15 // km/l
-}
-
-func (ac *AdvancedCar) Navigate(destination string) {
-	if ac.engine.IsRunning() {
-		ac.gps.Navigate(destination)
-	} else {
-		fmt.Println("Please start the car first")
-	}
-}
-
-func (ac *AdvancedCar) ShowFeatures() {
-	fmt.Printf("Car features: %s\n", strings.Join(ac.features, ", "))
-}
+// Go doesn't have the classic diamond problem because:
+// 1. No multiple struct embedding of same type
+// 2. Interface methods are satisfied by single implementation
+// 3. If embedding conflicts occur, you must explicitly resolve them
 
 // ============================================================================
-// 8. POLYMORPHISM - Method Overloading simulation (Go doesn't have it)
+// 5. POLYMORPHISM - Method Overloading simulation & Runtime polymorphism
 // ============================================================================
 
 type Calculator struct{}
 
-func NewCalculator() *Calculator {
-	return &Calculator{}
-}
+// Go doesn't have method overloading, so we simulate with different names
+func (c *Calculator) CalculateInt(a, b int) int           { return a + b }
+func (c *Calculator) CalculateFloat(a, b float64) float64 { return a + b }
+func (c *Calculator) CalculateThree(a, b, c int) int      { return a + b + c }
 
-// Go doesn't have method overloading, so we use different names or variadic functions
-func (c *Calculator) AddInts(a, b int) int {
-	return a + b
-}
-
-func (c *Calculator) AddFloats(a, b float64) float64 {
-	return a + b
-}
-
-func (cal *Calculator) AddThreeInts(a, b, c int) int {
-	return a + b + c
-}
-
-func (c *Calculator) AddStrings(a, b string) string {
-	return a + " " + b
-}
-
-// Using variadic function to simulate overloading
-func (c *Calculator) Add(values ...interface{}) interface{} {
+// Alternative: using variadic and type assertion
+func (c *Calculator) Calculate(values ...interface{}) interface{} {
 	if len(values) == 2 {
 		switch v1 := values[0].(type) {
 		case int:
@@ -388,170 +194,166 @@ func (c *Calculator) Add(values ...interface{}) interface{} {
 			if v2, ok := values[1].(float64); ok {
 				return v1 + v2
 			}
-		case string:
-			if v2, ok := values[1].(string); ok {
-				return v1 + " " + v2
-			}
 		}
 	}
 	return nil
 }
 
 // ============================================================================
-// 9. VEHICLE MANAGER - Demonstrates polymorphism with interfaces
+// 6. ABSTRACTION - Interface (pure abstraction/contract)
 // ============================================================================
 
-type VehicleManager struct{}
-
-func NewVehicleManager() *VehicleManager {
-	return &VehicleManager{}
+// Interface defines contract (like abstract class methods)
+type Vehicular interface {
+	Start()
+	DisplayInfo()
 }
 
-// Method that works with any Vehicular interface (polymorphism)
-func (vm *VehicleManager) TestVehicle(vehicle Vehicular) {
-	vehicle.DisplayBasicInfo()
-	vehicle.Start()
-	fmt.Printf("Fuel efficiency: %.1f km/l\n", vehicle.CalculateFuelEfficiency())
-	vehicle.Stop()
-	fmt.Println()
+type Drivable interface {
+	Drive()
 }
 
-// Method that works with any Drivable interface
-func (vm *VehicleManager) TestDriving(vehicle Drivable) {
-	vehicle.Accelerate()
-	vehicle.Turn("left")
-	vehicle.Brake()
-	fmt.Println()
+// Base struct (like abstract class)
+type Vehicle struct {
+	brand string
+}
+
+func NewVehicle(brand string) Vehicle {
+	return Vehicle{brand: brand}
+}
+
+func (v *Vehicle) DisplayInfo() {
+	fmt.Printf("Vehicle: %s\n", v.brand)
+}
+
+// Car implements interfaces
+type Car struct {
+	Vehicle // embedded (inheritance)
+}
+
+func NewCar(brand string) *Car {
+	return &Car{Vehicle: NewVehicle(brand)}
+}
+
+func (c *Car) Start() {
+	fmt.Printf("%s car started\n", c.brand)
+}
+
+func (c *Car) Drive() {
+	fmt.Printf("%s car is driving\n", c.brand)
 }
 
 // ============================================================================
-// 10. MAIN FUNCTION - Demonstration of all concepts
+// 7. ENCAPSULATION - Data hiding with controlled access
+// ============================================================================
+
+type BankAccount struct {
+	balance       float64 // unexported (private)
+	accountNumber string  // unexported (private)
+}
+
+func NewBankAccount(accountNumber string, initialBalance float64) *BankAccount {
+	balance := initialBalance
+	if balance < 0 {
+		balance = 0
+	}
+	return &BankAccount{accountNumber: accountNumber, balance: balance}
+}
+
+// Controlled access through methods
+func (ba *BankAccount) GetBalance() float64 { return ba.balance }
+
+func (ba *BankAccount) Deposit(amount float64) bool {
+	if amount > 0 {
+		ba.balance += amount
+		return true
+	}
+	return false
+}
+
+func (ba *BankAccount) Withdraw(amount float64) bool {
+	if amount > 0 && amount <= ba.balance {
+		ba.balance -= amount
+		return true
+	}
+	return false
+}
+
+// ============================================================================
+// 8. INTERFACE for POLYMORPHISM DEMO
+// ============================================================================
+
+type Worker interface {
+	Work()
+}
+
+// ============================================================================
+// 9. MAIN FUNCTION - Demonstrating all concepts
 // ============================================================================
 
 func main() {
-	fmt.Println("=== Object-Oriented Programming Demo in Go ===\n")
+	fmt.Println("=== Complete OOP Demo in Go ===\n")
 
-	// ========== ENCAPSULATION DEMO ==========
-	fmt.Println("1. ENCAPSULATION DEMO:")
-	account := NewBankAccount("ACC001", "Alice Johnson", 1000)
+	// 1. STRUCT, CONSTRUCTOR, PACKAGE-LEVEL VARIABLE
+	fmt.Println("1. Structs & Objects:")
+	emp := NewEmployee("Alice", 50000, "IT")
+	mgr := NewManager("Bob", 80000, "IT", "DevTeam")
+	fmt.Printf("Total employees: %d\n", GetTotalEmployees())
 
-	account.DisplayInfo()
-	account.Deposit(200)
-	account.Withdraw(150)
-	account.DisplayInfo()
-	fmt.Printf("Total accounts created: %d\n\n", GetTotalAccounts())
-
-	// ========== INHERITANCE & POLYMORPHISM DEMO ==========
-	fmt.Println("2. INHERITANCE & POLYMORPHISM DEMO:")
-	manager := NewVehicleManager()
-
-	// Creating different types of vehicles
-	sedan := NewCar("Toyota", "Camry", 2023, 4, "Petrol")
-	ferrari := NewSportsCar("Ferrari", "F8", 2023, 2, 710, true)
-	bike := NewMotorcycle("Honda", "CBR600RR", 2023, 600)
-
-	// Polymorphism - same method, different behaviors
-	manager.TestVehicle(sedan)   // Calls Car's implementation
-	manager.TestVehicle(ferrari) // Calls SportsCar's implementation
-	manager.TestVehicle(bike)    // Calls Motorcycle's implementation
-
-	// ========== INTERFACE POLYMORPHISM ==========
-	fmt.Println("3. INTERFACE POLYMORPHISM:")
-	manager.TestDriving(sedan)
-	manager.TestDriving(ferrari)
-	manager.TestDriving(bike)
-
-	// ========== CALCULATOR DEMO (Simulated Method Overloading) ==========
-	fmt.Println("4. CALCULATOR DEMO (Simulated Method Overloading):")
-	calc := NewCalculator()
-	fmt.Printf("AddInts(5, 3) = %d\n", calc.AddInts(5, 3))
-	fmt.Printf("AddFloats(5.5, 3.2) = %.1f\n", calc.AddFloats(5.5, 3.2))
-	fmt.Printf("AddThreeInts(1, 2, 3) = %d\n", calc.AddThreeInts(1, 2, 3))
-	fmt.Printf("AddStrings(\"Hello\", \"World\") = %s\n", calc.AddStrings("Hello", "World"))
-
-	// Using variadic approach
-	fmt.Printf("Add(10, 20) = %v\n", calc.Add(10, 20))
-	fmt.Printf("Add(\"Go\", \"Programming\") = %v\n\n", calc.Add("Go", "Programming"))
-
-	// ========== COMPOSITION DEMO ==========
-	fmt.Println("5. COMPOSITION DEMO:")
-	v8Engine := NewEngine("V8", 450)
-	luxuryCar := NewAdvancedCar("Mercedes", "S-Class", 2023, v8Engine)
-
-	luxuryCar.DisplayBasicInfo()
-	luxuryCar.ShowFeatures()
-	luxuryCar.Start()
-	luxuryCar.Navigate("Downtown Mall")
-	luxuryCar.Stop()
-	fmt.Println()
-
-	// ========== SPORTS CAR SPECIFIC FEATURES ==========
-	fmt.Println("6. SPORTS CAR SPECIFIC FEATURES:")
-	ferrari.DisplayBasicInfo()
-	ferrari.Start()
-	ferrari.Accelerate()
-	ferrari.ActivateSportMode()
-	ferrari.AddMileage(5000)
-	fmt.Printf("Needs maintenance: %t\n\n", ferrari.NeedsMaintenance())
-
-	// ========== RUNTIME POLYMORPHISM DEMO ==========
-	fmt.Println("7. RUNTIME POLYMORPHISM DEMO:")
-	vehicles := []Vehicular{sedan, ferrari, bike}
-
-	for _, v := range vehicles {
-		fmt.Print("Vehicle: ")
-		v.DisplayBasicInfo()
-		v.Start() // Different implementation called based on actual object type
-		fmt.Println()
+	// 2. INHERITANCE & RUNTIME POLYMORPHISM
+	fmt.Println("\n2. Embedding (Inheritance) & Runtime Polymorphism:")
+	workers := []Worker{emp, mgr, NewDeveloper("Charlie", 60000, "IT", "Java"),
+		NewSeniorDeveloper("David", 90000, "IT", "Python", 8)}
+	for _, w := range workers {
+		w.Work() // Different behavior based on actual type (runtime polymorphism)
 	}
 
-	// ========== INTERFACE COMPOSITION DEMO ==========
-	fmt.Println("8. INTERFACE COMPOSITION DEMO:")
+	// 3. COMPOSITION
+	fmt.Println("\n3. Composition (Has-A relationship):")
+	laptop := NewComputer("Dell Laptop")
+	mainOffice := NewOffice("New York")
+	ws := NewWorkStation("Eve", 55000, "IT", laptop, mainOffice)
+	ws.Work()
 
-	// Creating slice of different interface types
-	drivableVehicles := []Drivable{sedan, ferrari, bike}
-	fmt.Println("Testing all drivable vehicles:")
-	for i, dv := range drivableVehicles {
-		fmt.Printf("Vehicle %d:\n", i+1)
-		manager.TestDriving(dv)
-	}
+	// 4. DIAMOND PROBLEM SOLUTION
+	fmt.Println("\n4. Diamond Problem Solution:")
+	lead := NewTeamLead("Frank", 75000, "IT")
+	lead.DoWork()
+	fmt.Println("// Go solves diamond problem through interface design")
+	fmt.Println("// Single method implementation satisfies multiple interfaces")
 
-	// ========== MAINTENANCE CHECK ==========
-	fmt.Println("9. MAINTENANCE CHECK:")
-	maintainableVehicles := []Maintainable{sedan, ferrari}
+	// 5. METHOD OVERLOADING SIMULATION (Compile-time like)
+	fmt.Println("\n5. Method Overloading Simulation:")
+	calc := &Calculator{}
+	fmt.Printf("CalculateInt(5, 3): %d\n", calc.CalculateInt(5, 3))
+	fmt.Printf("CalculateFloat(5.5, 3.2): %.1f\n", calc.CalculateFloat(5.5, 3.2))
+	fmt.Printf("CalculateThree(1, 2, 3): %d\n", calc.CalculateThree(1, 2, 3))
+	fmt.Printf("Calculate(10, 20): %v\n", calc.Calculate(10, 20))
 
-	for i, mv := range maintainableVehicles {
-		fmt.Printf("Vehicle %d maintenance status:\n", i+1)
-		if mv.NeedsMaintenance() {
-			fmt.Println("⚠️  Maintenance required!")
-			mv.PerformMaintenance()
-		} else {
-			fmt.Println("✅ No maintenance needed")
-		}
-		fmt.Println()
-	}
-
-	// ========== TYPE ASSERTION AND INTERFACE CHECKING ==========
-	fmt.Println("10. TYPE ASSERTION AND INTERFACE CHECKING:")
-
-	var vehicle Vehicular = ferrari
-
-	// Type assertion
-	if sportsCar, ok := vehicle.(*SportsCar); ok {
-		fmt.Println("This is a sports car!")
-		sportsCar.ActivateSportMode()
-	}
-
-	// Interface checking
+	// 6. ABSTRACTION (Interface)
+	fmt.Println("\n6. Abstraction (Interface contract):")
+	var vehicle Vehicular = NewCar("Toyota") // Interface reference
+	vehicle.DisplayInfo()
+	vehicle.Start()
 	if drivable, ok := vehicle.(Drivable); ok {
-		fmt.Println("This vehicle is drivable!")
-		drivable.Accelerate()
+		drivable.Drive() // Type assertion for interface
 	}
 
-	if maintainable, ok := vehicle.(Maintainable); ok {
-		fmt.Println("This vehicle is maintainable!")
-		fmt.Printf("Needs maintenance: %t\n", maintainable.NeedsMaintenance())
+	// 7. ENCAPSULATION
+	fmt.Println("\n7. Encapsulation (Data hiding & controlled access):")
+	account := NewBankAccount("ACC001", 1000)
+	fmt.Printf("Initial balance: %.0f\n", account.GetBalance())
+	account.Deposit(500)
+	account.Withdraw(200)
+	fmt.Printf("Final balance: %.0f\n", account.GetBalance())
+	// account.balance = 9999 // Error: cannot access unexported field
+
+	// 8. TYPE ASSERTION & INTERFACE POLYMORPHISM
+	fmt.Println("\n8. Type Assertion & Interface Polymorphism:")
+	var worker Worker = mgr
+	if manager, ok := worker.(*Manager); ok {
+		fmt.Printf("Type assertion success: %s is a manager\n", manager.GetName())
 	}
 
-	fmt.Println("\n=== Demo Complete ===")
+	fmt.Println("\n=== All OOP concepts demonstrated ===")
 }
